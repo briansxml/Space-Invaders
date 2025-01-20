@@ -11,6 +11,8 @@ speed_move = 180
 speed_bullet = 400
 clock = pygame.time.Clock()
 bullet_status = 0
+enemy_direction = 1
+enemy_speed = 2
 
 player_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
@@ -25,6 +27,66 @@ def load_image(name, colorkey=None):
         sys.exit()
     image = pygame.image.load(fullname)
     return image
+
+
+class Menu:
+    def __init__(self):
+        self.font = pygame.font.Font(None, 74)
+        self.font_small = pygame.font.Font(None, 36)
+        self.difficulty = "easy"
+        self.difficulties = ["easy", "medium", "hard"]
+        self.current_difficulty_index = 0
+        self.running = True
+
+    def draw(self):
+        screen.fill((0, 0, 0))
+        background = load_image("space_background.jpg")
+        screen.blit(background, (0, 0))
+        title = self.font.render("Space Invaders", True, (255, 255, 255))
+        start_button = self.font_small.render("Начать", True, (255, 255, 255))
+        exit_button = self.font_small.render("Выход", True, (255, 255, 255))
+        difficulty_text = self.font_small.render(f"Сложность: {self.difficulties[self.current_difficulty_index]}", True,
+                                                 (255, 255, 255))
+
+        start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
+        exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))
+
+        screen.blit(title, (width // 2 - title.get_width() // 2, height // 4))
+        screen.blit(start_button, start_button_rect)
+        screen.blit(exit_button, exit_button_rect)
+        screen.blit(difficulty_text, (width // 2 - difficulty_text.get_width() // 2, height // 2 + 100))
+
+        left_arrow = self.font_small.render("<", True, (255, 255, 255))
+        right_arrow = self.font_small.render(">", True, (255, 255, 255))
+        screen.blit(left_arrow, (width // 2 - difficulty_text.get_width() // 2 - 30, height // 2 + 100))
+        screen.blit(right_arrow, (width // 2 + difficulty_text.get_width() // 2 + 10, height // 2 + 100))
+
+        return start_button_rect, exit_button_rect
+
+    def run(self):
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    if start_button_rect.collidepoint(mouse_pos):
+                        return self.difficulties[self.current_difficulty_index]  # Начать игру с выбранной сложностью
+                    if exit_button_rect.collidepoint(mouse_pos):
+                        self.running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
+                    elif event.key == pygame.K_DOWN:
+                        self.current_difficulty_index = (self.current_difficulty_index - 1) % len(self.difficulties)
+                    elif event.key == pygame.K_LEFT:
+                        self.current_difficulty_index = (self.current_difficulty_index - 1) % len(self.difficulties)
+                    elif event.key == pygame.K_RIGHT:
+                        self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
+
+            start_button_rect, exit_button_rect = self.draw()
+            pygame.display.flip()
+            clock.tick(fps)
 
 
 class Player(pygame.sprite.Sprite):
@@ -123,6 +185,13 @@ class Enemy_Red(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
 
+        global enemy_direction
+        self.rect.x += enemy_direction * enemy_speed
+        if self.rect.right >= width or self.rect.left <= 0:
+            enemy_direction *= -1
+            for enemy in enemy_group:
+                enemy.rect.y += 10
+
 
 class Enemy_Yellow(pygame.sprite.Sprite):
     image = load_image("enemy-medium.png")
@@ -159,6 +228,13 @@ class Enemy_Yellow(pygame.sprite.Sprite):
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
+
+        global enemy_direction
+        self.rect.x += enemy_direction * enemy_speed
+        if self.rect.right >= width or self.rect.left <= 0:
+            enemy_direction *= -1
+            for enemy in enemy_group:
+                enemy.rect.y += 10
 
 
 class Enemy_Green(pygame.sprite.Sprite):
@@ -197,6 +273,13 @@ class Enemy_Green(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
 
+        global enemy_direction
+        self.rect.x += enemy_direction * enemy_speed
+        if self.rect.right >= width or self.rect.left <= 0:
+            enemy_direction *= -1
+            for enemy in enemy_group:
+                enemy.rect.y += 10
+
 class Explosion(pygame.sprite.Sprite):
     image = load_image("explosion.png")
 
@@ -233,6 +316,13 @@ class Explosion(pygame.sprite.Sprite):
         self.if_num += 1
 
 
+menu = Menu()
+difficulty = menu.run()
+
+if difficulty is None:
+    pygame.quit()
+
+
 Player()
 for i in range(22, width - 50, 56):
     Enemy_Red(i, 40)
@@ -248,11 +338,11 @@ while running:
             running = False
     screen.fill((0, 0, 0))
     player_group.draw(screen)
-    player_group.update(event)
+    player_group.update()
     bullet_group.draw(screen)
-    bullet_group.update(event)
+    bullet_group.update()
     enemy_group.draw(screen)
-    enemy_group.update(event)
+    enemy_group.update()
     pygame.display.flip()
     clock.tick(fps)
 pygame.quit()

@@ -12,7 +12,7 @@ speed_bullet = 400
 clock = pygame.time.Clock()
 bullet_status = 0
 enemy_direction = 1
-enemy_speed = 2
+enemy_speed = 1
 
 player_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
@@ -185,13 +185,6 @@ class Enemy_Red(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
 
-        global enemy_direction
-        self.rect.x += enemy_direction * enemy_speed
-        if self.rect.right >= width or self.rect.left <= 0:
-            enemy_direction *= -1
-            for enemy in enemy_group:
-                enemy.rect.y += 10
-
 
 class Enemy_Yellow(pygame.sprite.Sprite):
     image = load_image("enemy-medium.png")
@@ -228,13 +221,6 @@ class Enemy_Yellow(pygame.sprite.Sprite):
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
-
-        global enemy_direction
-        self.rect.x += enemy_direction * enemy_speed
-        if self.rect.right >= width or self.rect.left <= 0:
-            enemy_direction *= -1
-            for enemy in enemy_group:
-                enemy.rect.y += 10
 
 
 class Enemy_Green(pygame.sprite.Sprite):
@@ -273,12 +259,6 @@ class Enemy_Green(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
 
-        global enemy_direction
-        self.rect.x += enemy_direction * enemy_speed
-        if self.rect.right >= width or self.rect.left <= 0:
-            enemy_direction *= -1
-            for enemy in enemy_group:
-                enemy.rect.y += 10
 
 class Explosion(pygame.sprite.Sprite):
     image = load_image("explosion.png")
@@ -316,12 +296,28 @@ class Explosion(pygame.sprite.Sprite):
         self.if_num += 1
 
 
+def enemy_move_update():
+    global enemy_direction, enemy_speed
+    if enemy_group:
+        leftmost = min(enemy.rect.x for enemy in enemy_group)
+        rightmost = max(enemy.rect.x + enemy.rect.w for enemy in enemy_group)
+
+        # Проверка, достигли ли крайние враги границ
+        if rightmost >= width or leftmost <= 0:
+            enemy_direction *= -1
+            for enemy in enemy_group:
+                enemy.rect.y += 10
+
+        # Обновление всех врагов
+        for enemy in enemy_group:
+            enemy.rect.x += enemy_direction * enemy_speed
+
+
 menu = Menu()
 difficulty = menu.run()
 
 if difficulty is None:
     pygame.quit()
-
 
 Player()
 for i in range(22, width - 50, 56):
@@ -343,6 +339,7 @@ while running:
     bullet_group.update()
     enemy_group.draw(screen)
     enemy_group.update()
+    enemy_move_update()
     pygame.display.flip()
     clock.tick(fps)
 pygame.quit()

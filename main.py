@@ -13,6 +13,9 @@ clock = pygame.time.Clock()
 bullet_status = 0  # 1 - пуля игрока существует и летит, 0 - пули игрока нет
 enemy_direction = 1  # Направление передвижения врага (1 - вправо, -1 - влево)
 enemy_speed = 1  # Скорост передвижения врага
+score = 0  # очки
+total_time = 120  # таймер
+start_ticks = pygame.time.get_ticks()  # Начальное время для таймера
 enemy_speed_bullet = 150  # Скорость пули врага
 chance_shot_enemy = 20  # С каким шансом враги будут стрелять
 running = True
@@ -32,6 +35,23 @@ def load_image(name, colorkey=None):  # Функция загрузки изоб
         sys.exit()
     image = pygame.image.load(fullname)
     return image
+
+
+def draw_score_and_timer():
+    global score
+    elapsed_time = (pygame.time.get_ticks() - start_ticks) // 1000  # Время в секундах
+    remaining_time = total_time - elapsed_time
+    if remaining_time < 0:
+        remaining_time = 0
+    minutes = remaining_time // 60
+    seconds = remaining_time % 60
+    timer_text = f"Время: {minutes:02}:{seconds:02}"
+    score_text = f"Очки: {score}"
+    font = pygame.font.Font(None, 36)
+    timer_surface = font.render(timer_text, True, (255, 255, 255))
+    score_surface = font.render(score_text, True, (255, 255, 255))
+    screen.blit(timer_surface, (10, 10))  # Позиция таймера
+    screen.blit(score_surface, (10, 40))  # Позиция счета
 
 
 class Menu:  # Меню
@@ -218,6 +238,13 @@ class Enemy_Red(pygame.sprite.Sprite):
         self.if_num_bullet += 1
         global bullet_status
         if pygame.sprite.spritecollideany(self, bullet_group):
+            Explosion(self.rect.x, self.rect.y, 52, 64)
+            self.kill()
+            list(bullet_group)[0].kill()
+            bullet_status = 0
+            global score
+            score += 100
+        if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
             list(bullet_group)[0].kill()
@@ -272,6 +299,13 @@ class Enemy_Yellow(pygame.sprite.Sprite):
         self.if_num_bullet += 1
         global bullet_status
         if pygame.sprite.spritecollideany(self, bullet_group):
+            Explosion(self.rect.x, self.rect.y, 52, 64)
+            self.kill()
+            list(bullet_group)[0].kill()
+            bullet_status = 0
+            global score
+            score += 100
+        if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
             list(bullet_group)[0].kill()
@@ -325,6 +359,13 @@ class Enemy_Green(pygame.sprite.Sprite):
         self.if_num += 1
         self.if_num_bullet += 1
         global bullet_status
+        if pygame.sprite.spritecollideany(self, bullet_group):
+            Explosion(self.rect.x, self.rect.y, 52, 64)
+            self.kill()
+            list(bullet_group)[0].kill()
+            bullet_status = 0
+            global score
+            score += 100
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -416,6 +457,8 @@ while running:
     enemy_move_update()
     explosion_group.update()
     explosion_group.draw(screen)
+    draw_score_and_timer()
+    final_score = int(score)
     pygame.display.flip()
     clock.tick(fps)
 pygame.quit()

@@ -17,7 +17,8 @@ score = 0  # очки
 total_time = 120  # таймер
 start_ticks = pygame.time.get_ticks()  # Начальное время для таймера
 enemy_speed_bullet = 150  # Скорость пули врага
-chance_shot_enemy = 20  # С каким шансом враги будут стрелять
+chance_shot_enemy = 30  # С каким шансом враги будут стрелять
+level = 1  # это на потом
 running = True
 
 player_group = pygame.sprite.Group()  # Группа спрайтов с игроком
@@ -35,6 +36,17 @@ def load_image(name, colorkey=None):  # Функция загрузки изоб
         sys.exit()
     image = pygame.image.load(fullname)
     return image
+
+
+def show_end_screen(final_score):
+    screen.fill((0, 0, 0))
+    font = pygame.font.Font(None, 74)
+    text = font.render("Уровень завершен!", True, (255, 255, 255))
+    score_text = font.render(f"Ваши очки: {final_score}", True, (255, 255, 255))
+    screen.blit(text, (width // 2 - text.get_width() // 2, height // 4))
+    screen.blit(score_text, (width // 2 - score_text.get_width() // 2, height // 2))
+    pygame.display.flip()
+    pygame.time.wait(3000)
 
 
 def draw_score_and_timer():
@@ -243,7 +255,12 @@ class Enemy_Red(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
             global score
-            score += 100
+            global enemy_speed
+            if self.rect.y <= 60:
+                score += 200
+            else:
+                score += 100
+            enemy_speed += 0.1
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -288,7 +305,7 @@ class Enemy_Yellow(pygame.sprite.Sprite):
     def update(self, *args):
         if self.if_num_bullet == 30:
             self.if_num_bullet = 0
-            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
+            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
                 Enemy_Bullet((self.rect.x
                               + self.rect.w // 2 - 5 // 2), self.rect.y + self.rect.h)
         if self.if_num == 5:
@@ -304,7 +321,14 @@ class Enemy_Yellow(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
             global score
-            score += 100
+            global enemy_speed
+            if self.rect.y <= 60:
+                score += 200
+            elif self.rect.y <= 100:
+                score += 100
+            elif self.rect.y <= 200:
+                score += 70
+            enemy_speed += 0.1
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -349,7 +373,7 @@ class Enemy_Green(pygame.sprite.Sprite):
     def update(self, *args):
         if self.if_num_bullet == 30:
             self.if_num_bullet = 0
-            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
+            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
                 Enemy_Bullet((self.rect.x
                               + self.rect.w // 2 - 5 // 2), self.rect.y + self.rect.h)
         if self.if_num == 5:
@@ -365,7 +389,14 @@ class Enemy_Green(pygame.sprite.Sprite):
             list(bullet_group)[0].kill()
             bullet_status = 0
             global score
-            score += 100
+            global enemy_speed
+            if self.rect.y <= 60:
+                score += 200
+            elif self.rect.y <= 100:
+                score += 100
+            elif self.rect.y <= 200:
+                score += 70
+            enemy_speed += 0.1
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -423,7 +454,7 @@ def enemy_move_update():
 
         # Обновление всех врагов
         for enemy in enemy_group:
-            enemy.rect.x += enemy_direction * enemy_speed
+            enemy.rect.x += enemy_direction * round(enemy_speed)
 
 
 menu = Menu()
@@ -433,12 +464,20 @@ if difficulty is None:
     pygame.quit()
 
 Player()
-for i in range(22, width - 50, 56):
-    Enemy_Red(i, 40)
-for i in range(40, width - 50, 52):
-    Enemy_Yellow(i, 115)
-for i in range(57, width - 50, 50):
-    Enemy_Green(i, 150)
+if level == 1: # это типо первый уровень
+    for i in range(57, width - 50, 50):
+        Enemy_Green(i, 40)
+    for i in range(57, width - 50, 50):
+        Enemy_Green(i, -40)
+    for i in range(57, width - 50, 50):
+        Enemy_Green(i, -95)
+    for i in range(40, width - 50, 52):
+        Enemy_Yellow(i, -150)
+    # for i in range(22, width - 50, 56):
+    #     Enemy_Red(i, -140)
+    # for i in range(40, width - 50, 52):
+    #     Enemy_Yellow(i, -70)
+
 
 while running:
     for event in pygame.event.get():
@@ -458,6 +497,14 @@ while running:
     explosion_group.update()
     explosion_group.draw(screen)
     draw_score_and_timer()
+
+    if len(enemy_group) == 0:
+        remaining_time = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
+        multiplier = 1 + (remaining_time / 60) * 0.6
+        final_score = int(score * multiplier)
+        show_end_screen(final_score)  # Показываем экран завершения
+        running = False
+
     final_score = int(score)
     pygame.display.flip()
     clock.tick(fps)

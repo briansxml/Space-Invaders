@@ -6,18 +6,21 @@ import pygame
 pygame.init()
 size = width, height = 600, 400
 screen = pygame.display.set_mode(size)
+pygame.display.set_caption('Space Invaders')
 fps = 30  # FPS
 speed_move = 180  # Скорость передвижения игрока
 speed_bullet = 400  # Скорость пули игрока
 clock = pygame.time.Clock()
 bullet_status = 0  # 1 - пуля игрока существует и летит, 0 - пули игрока нет
 enemy_direction = 1  # Направление передвижения врага (1 - вправо, -1 - влево)
-enemy_speed = 1  # Скорост передвижения врага
+enemy_speed = 0.5  # Скорост передвижения врага
 score = 0  # очки
 total_time = 120  # таймер
+delta_time = 0  # Переменная для хранения времени между кадрами (в секундах)
 start_ticks = pygame.time.get_ticks()  # Начальное время для таймера
 enemy_speed_bullet = 150  # Скорость пули врага
 chance_shot_enemy = 30  # С каким шансом враги будут стрелять
+frame_shot = 30 # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
 level = 1  # это на потом
 running = True
 
@@ -165,8 +168,10 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += speed_move / fps
         if pygame.sprite.spritecollideany(self, bullet_group_enemy):
             Explosion(self.rect.x, self.rect.y, 52, 64)
+            for bullet_enemy in bullet_group_enemy:
+                if pygame.sprite.collide_rect(bullet_enemy, list(player_group)[0]):
+                    bullet_enemy.kill()
             self.kill()
-            list(bullet_group_enemy)[0].kill()
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -237,7 +242,8 @@ class Enemy_Red(pygame.sprite.Sprite):
         return True
 
     def update(self, *args):
-        if self.if_num_bullet == 30:
+        global frame_shot
+        if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
                 Enemy_Bullet((self.rect.x
@@ -303,7 +309,8 @@ class Enemy_Yellow(pygame.sprite.Sprite):
         return True
 
     def update(self, *args):
-        if self.if_num_bullet == 30:
+        global frame_shot
+        if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
                 Enemy_Bullet((self.rect.x
@@ -371,7 +378,8 @@ class Enemy_Green(pygame.sprite.Sprite):
         return True
 
     def update(self, *args):
-        if self.if_num_bullet == 30:
+        global frame_shot
+        if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
                 Enemy_Bullet((self.rect.x
@@ -441,20 +449,28 @@ class Explosion(pygame.sprite.Sprite):
 
 
 def enemy_move_update():
-    global enemy_direction, enemy_speed
+    global enemy_direction, enemy_speed, delta_time
+
     if enemy_group:
         leftmost = min(enemy.rect.x for enemy in enemy_group)
         rightmost = max(enemy.rect.x + enemy.rect.w for enemy in enemy_group)
 
-        # Проверка, достигли ли крайние враги границ
-        if rightmost >= width or leftmost <= 0:
-            enemy_direction *= -1
-            for enemy in enemy_group:
-                enemy.rect.y += 10
+        # Проверка на границы
+        if rightmost >= width:
+            if enemy_direction == 1:
+                enemy_direction *= -1
+                for enemy in enemy_group:
+                    enemy.rect.y += 10
+        elif leftmost <= 0:
+            if enemy_direction == -1:
+                enemy_direction *= -1
+                for enemy in enemy_group:
+                    enemy.rect.y += 10
 
         # Обновление всех врагов
         for enemy in enemy_group:
-            enemy.rect.x += enemy_direction * round(enemy_speed)
+            enemy.rect.x += int(enemy_direction * enemy_speed * delta_time * 100)
+            print(enemy_speed)
 
 
 menu = Menu()
@@ -464,7 +480,7 @@ if difficulty is None:
     pygame.quit()
 
 Player()
-if level == 1: # это типо первый уровень
+if level == 1:  # это типо первый уровень
     for i in range(57, width - 50, 50):
         Enemy_Green(i, 40)
     for i in range(57, width - 50, 50):
@@ -478,13 +494,13 @@ if level == 1: # это типо первый уровень
     # for i in range(40, width - 50, 52):
     #     Enemy_Yellow(i, -70)
 
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
     background = pygame.transform.scale(load_image("space_background_game.jpg"), (800, 400))  # Фон
     screen.blit(background, (-100, 0))
+    delta_time = clock.get_time() / 1000  # get_time() возвращает время с последнего тика в мс
     player_group.draw(screen)
     player_group.update()
     bullet_group.draw(screen)

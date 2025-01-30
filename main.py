@@ -96,6 +96,10 @@ class Menu:  # Меню
             enemy_speed_bullet = 250
             chance_shot_enemy = 70
             enemy_speed = 1.1
+        else:
+            enemy_speed_bullet = 150
+            chance_shot_enemy = 30
+            enemy_speed = 0.5
 
         start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
         exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))

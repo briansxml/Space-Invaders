@@ -77,6 +77,9 @@ class Menu:  # Меню
         self.current_difficulty_index = 0  # Сложность игры
 
     def draw(self):
+        global enemy_speed_bullet
+        global chance_shot_enemy
+        global enemy_speed
         screen.fill((0, 0, 0))
         background = pygame.transform.scale(load_image("space_background.jpg"), (800, 400))  # Фон
         screen.blit(background, (-100, 0))
@@ -85,6 +88,14 @@ class Menu:  # Меню
         exit_button = self.font_small.render("Выход", True, (255, 255, 255))
         difficulty_text = self.font_small.render(f"Сложность: {self.difficulties[self.current_difficulty_index]}", True,
                                                  (255, 255, 255))
+        if self.difficulties[self.current_difficulty_index] == 'medium':
+            enemy_speed_bullet = 200
+            chance_shot_enemy = 50
+            enemy_speed = 0.8
+        elif self.difficulties[self.current_difficulty_index] == 'hard':
+            enemy_speed_bullet = 250
+            chance_shot_enemy = 70
+            enemy_speed = 1.1
 
         start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
         exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))
@@ -343,7 +354,7 @@ class Enemy_Yellow(pygame.sprite.Sprite):
             bullet_status = 0
 
 
-class Enemy_Green(pygame.sprite.Sprite):
+class Enemy_Green(pygame.sprite.Sprite, Menu):
     image = load_image("enemy-small.png")
 
     def __init__(self, x, y):

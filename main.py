@@ -188,7 +188,7 @@ class Player(pygame.sprite.Sprite):
         if pygame.key.get_pressed()[pygame.K_RIGHT] and self.rect.x + self.rect.w < (width * 0.97):
             self.rect.x += speed_move / fps
         if pygame.sprite.spritecollideany(self, bullet_group_enemy):
-            Explosion(self.rect.x, self.rect.y, 52, 64)
+            Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             for bullet_enemy in bullet_group_enemy:
                 if pygame.sprite.collide_rect(bullet_enemy, list(player_group)[0]):
                     bullet_enemy.kill()
@@ -228,20 +228,19 @@ class Enemy_Bullet(pygame.sprite.Sprite):
         self.rect.y += enemy_speed_bullet / fps
 
 
-class Enemy_Red(pygame.sprite.Sprite):
-    image = load_image("enemy-big.png")
-
-    def __init__(self, x, y):
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, x, y, image, width, height, score_values):
         super().__init__(enemy_group)
         self.frames = []
-        self.cut_sheet(Enemy_Red.image, 2, 1)
+        self.cut_sheet(image, 2, 1)
         self.cur_frame = 0
         self.if_num = 0
         self.if_num_bullet = 0
-        self.image = pygame.transform.scale(self.frames[self.cur_frame], (52, 64))
+        self.image = pygame.transform.scale(self.frames[self.cur_frame], (width, height))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.score_values = score_values
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -253,184 +252,55 @@ class Enemy_Red(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def is_path_clear(self):
-        # Проверяет, есть ли враги на пути выстрела
         for enemy in enemy_group:
-            if (
-                    abs(enemy.rect.x - self.rect.x) < self.rect.width  # Горизонтальное перекрытие
-                    and enemy.rect.y > self.rect.y  # Враг ниже текущего
-            ):
+            if abs(enemy.rect.x - self.rect.x) < self.rect.width and enemy.rect.y > self.rect.y:
                 return False
         return True
 
     def update(self, *args):
-        global frame_shot
+        global frame_shot, bullet_status, score, enemy_speed
         if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
-                Enemy_Bullet((self.rect.x
-                              + self.rect.w // 2 - 5 // 2), self.rect.y + self.rect.h)
+                Enemy_Bullet(self.rect.x + self.rect.w // 2 - 5 // 2, self.rect.y + self.rect.h)
         if self.if_num == 5:
             self.if_num = 0
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = pygame.transform.scale(self.frames[self.cur_frame], self.image.get_size())
         self.if_num += 1
         self.if_num_bullet += 1
-        global bullet_status
-        if pygame.sprite.spritecollideany(self, bullet_group):
-            Explosion(self.rect.x, self.rect.y, 52, 64)
-            self.kill()
-            list(bullet_group)[0].kill()
-            bullet_status = 0
-            global score, enemy_speed
-            if self.rect.y <= 60:
-                score += 200
-            else:
-                score += 100
-            if enemy_speed < max_enemy_speed:
-                enemy_speed += max_give_enemy_speed
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
+            for threshold, points in self.score_values:
+                if self.rect.y <= threshold:
+                    score += points
+                    break
+            if enemy_speed < max_enemy_speed:
+                enemy_speed += max_give_enemy_speed
 
 
-class Enemy_Yellow(pygame.sprite.Sprite):
+class Enemy_Red(Enemy):
+    image = load_image("enemy-big.png")
+
+    def __init__(self, x, y):
+        super().__init__(x, y, Enemy_Red.image, 52, 64, [(60, 200), (float('inf'), 100)])
+
+
+class Enemy_Yellow(Enemy):
     image = load_image("enemy-medium.png")
 
     def __init__(self, x, y):
-        super().__init__(enemy_group)
-        self.frames = []
-        self.cut_sheet(Enemy_Yellow.image, 2, 1)
-        self.cur_frame = 0
-        self.if_num = 0
-        self.if_num_bullet = 0
-        self.image = pygame.transform.scale(self.frames[self.cur_frame], (48, 24))
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
-
-    def is_path_clear(self):
-        # Проверяет, есть ли враги на пути выстрела
-        for enemy in enemy_group:
-            if (
-                    abs(enemy.rect.x - self.rect.x) < self.rect.width  # Горизонтальное перекрытие
-                    and enemy.rect.y > self.rect.y  # Враг ниже текущего
-            ):
-                return False
-        return True
-
-    def update(self, *args):
-        global frame_shot
-        if self.if_num_bullet == frame_shot:
-            self.if_num_bullet = 0
-            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
-                Enemy_Bullet((self.rect.x
-                              + self.rect.w // 2 - 5 // 2), self.rect.y + self.rect.h)
-        if self.if_num == 5:
-            self.if_num = 0
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-            self.image = pygame.transform.scale(self.frames[self.cur_frame], self.image.get_size())
-        self.if_num += 1
-        self.if_num_bullet += 1
-        global bullet_status
-        if pygame.sprite.spritecollideany(self, bullet_group):
-            Explosion(self.rect.x, self.rect.y, 52, 64)
-            self.kill()
-            list(bullet_group)[0].kill()
-            bullet_status = 0
-            global score, enemy_speed
-            if self.rect.y <= 60:
-                score += 200
-            elif self.rect.y <= 100:
-                score += 100
-            elif self.rect.y <= 200:
-                score += 70
-            if enemy_speed < max_enemy_speed:
-                enemy_speed += max_give_enemy_speed
-        if pygame.sprite.spritecollideany(self, bullet_group):
-            Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
-            self.kill()
-            list(bullet_group)[0].kill()
-            bullet_status = 0
+        super().__init__(x, y, Enemy_Yellow.image, 48, 24, [(60, 200), (100, 100), (200, 70)])
 
 
-class Enemy_Green(pygame.sprite.Sprite, Menu):
+class Enemy_Green(Enemy):
     image = load_image("enemy-small.png")
 
     def __init__(self, x, y):
-        super().__init__(enemy_group)
-        self.frames = []
-        self.cut_sheet(Enemy_Green.image, 2, 1)
-        self.cur_frame = 0
-        self.if_num = 0
-        self.if_num_bullet = 0
-        self.image = pygame.transform.scale(self.frames[self.cur_frame], (32, 32))
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
-
-    def is_path_clear(self):
-        # Проверяет, есть ли враги на пути выстрела
-        for enemy in enemy_group:
-            if (
-                    abs(enemy.rect.x - self.rect.x) < self.rect.width  # Горизонтальное перекрытие
-                    and enemy.rect.y > self.rect.y  # Враг ниже текущего
-            ):
-                return False
-        return True
-
-    def update(self, *args):
-        global frame_shot
-        if self.if_num_bullet == frame_shot:
-            self.if_num_bullet = 0
-            if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear() and self.rect.y >= 0:
-                Enemy_Bullet((self.rect.x
-                              + self.rect.w // 2 - 5 // 2), self.rect.y + self.rect.h)
-        if self.if_num == 5:
-            self.if_num = 0
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-            self.image = pygame.transform.scale(self.frames[self.cur_frame], self.image.get_size())
-        self.if_num += 1
-        self.if_num_bullet += 1
-        global bullet_status
-        if pygame.sprite.spritecollideany(self, bullet_group):
-            Explosion(self.rect.x, self.rect.y, 52, 64)
-            self.kill()
-            list(bullet_group)[0].kill()
-            bullet_status = 0
-            global score, enemy_speed
-            if self.rect.y <= 60:
-                score += 200
-            elif self.rect.y <= 100:
-                score += 100
-            elif self.rect.y <= 200:
-                score += 70
-            if enemy_speed < max_enemy_speed:
-                enemy_speed += max_give_enemy_speed
-        if pygame.sprite.spritecollideany(self, bullet_group):
-            Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
-            self.kill()
-            list(bullet_group)[0].kill()
-            bullet_status = 0
+        super().__init__(x, y, Enemy_Green.image, 32, 32, [(60, 200), (100, 100), (200, 70)])
 
 
 class Explosion(pygame.sprite.Sprite):

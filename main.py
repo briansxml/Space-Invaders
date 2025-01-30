@@ -13,14 +13,16 @@ speed_bullet = 400  # Скорость пули игрока
 clock = pygame.time.Clock()
 bullet_status = 0  # 1 - пуля игрока существует и летит, 0 - пули игрока нет
 enemy_direction = 1  # Направление передвижения врага (1 - вправо, -1 - влево)
-enemy_speed = 0.5  # Скорост передвижения врага
+enemy_speed = 0.50  # Скорость передвижения врага
+max_enemy_speed = 1  # Максимальная скорость передвижения врага
+max_give_enemy_speed = 0.02  # Максимальное значение которое выдается к скорости передвижения врага
 score = 0  # очки
-total_time = 120  # таймер
+total_time = 120  # Таймер
 delta_time = 0  # Переменная для хранения времени между кадрами (в секундах)
 start_ticks = pygame.time.get_ticks()  # Начальное время для таймера
 enemy_speed_bullet = 150  # Скорость пули врага
 chance_shot_enemy = 30  # С каким шансом враги будут стрелять
-frame_shot = 30 # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
+frame_shot = 30  # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
 level = 1  # это на потом
 running = True
 
@@ -77,9 +79,7 @@ class Menu:  # Меню
         self.current_difficulty_index = 0  # Сложность игры
 
     def draw(self):
-        global enemy_speed_bullet
-        global chance_shot_enemy
-        global enemy_speed
+        global enemy_speed_bullet, enemy_speed, chance_shot_enemy, max_give_enemy_speed, max_enemy_speed
         screen.fill((0, 0, 0))
         background = pygame.transform.scale(load_image("space_background.jpg"), (800, 400))  # Фон
         screen.blit(background, (-100, 0))
@@ -91,15 +91,21 @@ class Menu:  # Меню
         if self.difficulties[self.current_difficulty_index] == 'medium':
             enemy_speed_bullet = 200
             chance_shot_enemy = 50
-            enemy_speed = 0.8
+            enemy_speed = 0.80
+            max_give_enemy_speed = 0.04
+            max_enemy_speed = 1.3
         elif self.difficulties[self.current_difficulty_index] == 'hard':
             enemy_speed_bullet = 250
             chance_shot_enemy = 70
-            enemy_speed = 1.1
+            enemy_speed = 1.10
+            max_give_enemy_speed = 0.06
+            max_enemy_speed = 1.6
         else:
             enemy_speed_bullet = 150
             chance_shot_enemy = 30
-            enemy_speed = 0.5
+            enemy_speed = 0.50
+            max_give_enemy_speed = 0.02
+            max_enemy_speed = 1
 
         start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
         exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))
@@ -275,13 +281,13 @@ class Enemy_Red(pygame.sprite.Sprite):
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
-            global score
-            global enemy_speed
+            global score, enemy_speed
             if self.rect.y <= 60:
                 score += 200
             else:
                 score += 100
-            enemy_speed += 0.1
+            if enemy_speed < max_enemy_speed:
+                enemy_speed += max_give_enemy_speed
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -342,15 +348,15 @@ class Enemy_Yellow(pygame.sprite.Sprite):
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
-            global score
-            global enemy_speed
+            global score, enemy_speed
             if self.rect.y <= 60:
                 score += 200
             elif self.rect.y <= 100:
                 score += 100
             elif self.rect.y <= 200:
                 score += 70
-            enemy_speed += 0.1
+            if enemy_speed < max_enemy_speed:
+                enemy_speed += max_give_enemy_speed
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()
@@ -411,15 +417,15 @@ class Enemy_Green(pygame.sprite.Sprite, Menu):
             self.kill()
             list(bullet_group)[0].kill()
             bullet_status = 0
-            global score
-            global enemy_speed
+            global score, enemy_speed
             if self.rect.y <= 60:
                 score += 200
             elif self.rect.y <= 100:
                 score += 100
             elif self.rect.y <= 200:
                 score += 70
-            enemy_speed += 0.1
+            if enemy_speed < max_enemy_speed:
+                enemy_speed += max_give_enemy_speed
         if pygame.sprite.spritecollideany(self, bullet_group):
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
             self.kill()

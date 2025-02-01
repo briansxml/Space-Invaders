@@ -499,14 +499,14 @@ while running:
     bullet_group_enemy.update()
     enemy_group.draw(screen)
     enemy_group.update()
-    player_group.draw(screen)
-    player_group.update()
     enemy_move_update()
     explosion_group.update()
     explosion_group.draw(screen)
     powerup_group.update()
     powerup_group.draw(screen)
     draw_score_and_timer()
+    player_group.draw(screen)
+    player_group.update()
 
     if len(enemy_group) == 0:
         remaining_time = total_time - (pygame.time.get_ticks() - start_ticks) // 1000

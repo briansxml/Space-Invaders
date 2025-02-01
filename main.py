@@ -4,6 +4,7 @@ import random
 import pygame
 
 pygame.init()
+pygame.mixer.init()
 size = width, height = 600, 400
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Space Invaders')
@@ -28,6 +29,12 @@ god_status = 0  # Определяет, есть ли у игрока неуяз
 god_status_again = 1  # Определяет, есть ли у игрока повторная неуязвимость
 frame_shot = 30  # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
 level = 1  # Уровень по-умолчанию
+god_status_one_time = 0
+power_up_sound = pygame.mixer.Sound('sound/pu_sound_1.mp3')
+bullet_sound_enemy = pygame.mixer.Sound('sound/shot_sound_1.mp3')
+bullet_sound_player = pygame.mixer.Sound('sound/shot_sound_2.mp3')
+explosion_sound_bullet = pygame.mixer.Sound('sound/explosion_1.mp3')  # звук взрыва
+explosion_sound = pygame.mixer.Sound('sound/explosion_2.mp3')  # звук взрыва
 running = True
 
 player_group = pygame.sprite.Group()  # Группа спрайтов с игроком
@@ -78,6 +85,9 @@ def draw_score_and_timer():  # Отображение очков и таймер
 
 class Menu:  # Меню
     def __init__(self):
+        pygame.mixer.music.load('sound/menu_sound.mp3')  # Музыка для главного меню
+        pygame.mixer.music.set_volume(0.5)  # Установка громкости (от 0.0 до 1.0)
+        pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле# Музыка для главного меню
         self.font = pygame.font.Font(None, 74)  # Шрифт
         self.font_small = pygame.font.Font(None, 36)  # Шрифт маленький
         self.difficulties = ["easy", "medium", "hard"]  # Список сложностей игры
@@ -191,11 +201,12 @@ class Player(pygame.sprite.Sprite):  # Игрок
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = pygame.transform.scale(self.frames[self.cur_frame], (32, 48))
         self.if_num += 1
-        global bullet_status, god_status, god_status_again, screen
+        global bullet_status, god_status, god_status_again, screen, god_status_one_time
         if pygame.key.get_pressed()[pygame.K_SPACE]:
             if not bullet_status:
                 Bullet()
                 bullet_status = 1
+                bullet_sound_player.play()  # Воспроизведение звука пули
         if pygame.key.get_pressed()[pygame.K_LEFT] and self.rect.x > width * 0.03:
             self.rect.x -= speed_move / fps
         if pygame.key.get_pressed()[pygame.K_RIGHT] and self.rect.x + self.rect.w < (width * 0.97):
@@ -205,12 +216,15 @@ class Player(pygame.sprite.Sprite):  # Игрок
                 Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
                 for bullet_enemy in bullet_group_enemy:
                     if pygame.sprite.collide_rect(bullet_enemy, list(player_group)[0]):
+                        explosion_sound.play()  # Воспроизведение звука взрыва
                         bullet_enemy.kill()
                 self.kill()
             else:
                 for bullet_enemy in bullet_group_enemy:
                     if pygame.sprite.collide_rect(bullet_enemy, list(player_group)[0]):
+                        explosion_sound.play()  # Воспроизведение звука взрыва
                         bullet_enemy.kill()
+
         if god_status:
             if god_status_again:
                 self.start_ticks = pygame.time.get_ticks()
@@ -235,6 +249,7 @@ class Shield(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(Shield.image, (70, 70))
         self.rect = self.image.get_rect()
         self.rect.center = list(player_group)[0].rect.center
+        power_up_sound.play()  # Воспроизведение звука взрыва
 
     def update(self):
         global shield_status
@@ -260,6 +275,7 @@ class Bullet(pygame.sprite.Sprite):  # Пуля игрока
         global bullet_status
         self.rect.y -= speed_bullet / fps
         if self.rect.y + self.rect.h < 0:
+            explosion_sound.play()  # Воспроизведение звука взрыва
             bullet_status = 0
             self.kill()
 
@@ -321,6 +337,7 @@ class Enemy(pygame.sprite.Sprite):  # Враг (шаблон)
         if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
+                bullet_sound_player.play()  # Воспроизведение звука пули
                 Enemy_Bullet(self.rect.x + self.rect.w // 2 - 5 // 2, self.rect.y + self.rect.h)
         if self.if_num == 5:
             self.if_num = 0
@@ -329,6 +346,7 @@ class Enemy(pygame.sprite.Sprite):  # Враг (шаблон)
         self.if_num += 1
         self.if_num_bullet += 1
         if pygame.sprite.spritecollideany(self, bullet_group):
+            explosion_sound.play()  # Воспроизведение звука взрыва
             if random.randint(1, 100) <= chance_powerup:
                 PowerUp(self.rect.x + self.rect.w // 2 - 16 // 2, self.rect.y + self.rect.h // 2 - 16 // 2)
             Explosion(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
@@ -473,6 +491,8 @@ difficulty = menu.run()
 
 Player()
 if level == 1:  # Первый уровень
+    pygame.mixer.music.load('sound/level_1_sound.mp3')  # Музыка для первого уровня
+    pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
         Enemy_Green(i, 40)
     for i in range(57, width - 50, 50):

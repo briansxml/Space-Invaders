@@ -30,11 +30,11 @@ god_status_again = 1  # Определяет, есть ли у игрока по
 frame_shot = 30  # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
 level = 1  # Уровень по-умолчанию
 god_status_one_time = 0
-power_up_sound = pygame.mixer.Sound('sound/pu_sound_1.mp3')
-bullet_sound_enemy = pygame.mixer.Sound('sound/shot_sound_1.mp3')
-bullet_sound_player = pygame.mixer.Sound('sound/shot_sound_2.mp3')
-explosion_sound_bullet = pygame.mixer.Sound('sound/explosion_1.mp3')  # звук взрыва
-explosion_sound = pygame.mixer.Sound('sound/explosion_2.mp3')  # звук взрыва
+power_up_sound = pygame.mixer.Sound('data/pu_sound_1.mp3')
+bullet_sound_enemy = pygame.mixer.Sound('data/shot_sound_1.mp3')
+bullet_sound_player = pygame.mixer.Sound('data/shot_sound_2.mp3')
+explosion_sound_bullet = pygame.mixer.Sound('data/explosion_1.mp3')  # звук взрыва
+explosion_sound = pygame.mixer.Sound('data/explosion_2.mp3')  # звук взрыва
 running = True
 
 player_group = pygame.sprite.Group()  # Группа спрайтов с игроком
@@ -85,7 +85,7 @@ def draw_score_and_timer():  # Отображение очков и таймер
 
 class Menu:  # Меню
     def __init__(self):
-        pygame.mixer.music.load('sound/menu_sound.mp3')  # Музыка для главного меню
+        pygame.mixer.music.load('data/menu_sound.mp3')  # Музыка для главного меню
         pygame.mixer.music.set_volume(0.5)  # Установка громкости (от 0.0 до 1.0)
         pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле# Музыка для главного меню
         self.font = pygame.font.Font(None, 74)  # Шрифт

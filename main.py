@@ -31,9 +31,7 @@ frame_shot = 30  # Сколько кадров должно пройти, что
 level = 1  # Уровень по-умолчанию
 god_status_one_time = 0
 power_up_sound = pygame.mixer.Sound('data/pu_sound_1.mp3')
-bullet_sound_enemy = pygame.mixer.Sound('data/shot_sound_1.mp3')
 bullet_sound_player = pygame.mixer.Sound('data/shot_sound_2.mp3')
-explosion_sound_bullet = pygame.mixer.Sound('data/explosion_1.mp3')  # звук взрыва
 explosion_sound = pygame.mixer.Sound('data/explosion_2.mp3')  # звук взрыва
 running = True
 
@@ -206,7 +204,6 @@ class Player(pygame.sprite.Sprite):  # Игрок
             if not bullet_status:
                 Bullet()
                 bullet_status = 1
-                bullet_sound_player.play()  # Воспроизведение звука пули
         if pygame.key.get_pressed()[pygame.K_LEFT] and self.rect.x > width * 0.03:
             self.rect.x -= speed_move / fps
         if pygame.key.get_pressed()[pygame.K_RIGHT] and self.rect.x + self.rect.w < (width * 0.97):
@@ -227,6 +224,7 @@ class Player(pygame.sprite.Sprite):  # Игрок
 
         if god_status:
             if god_status_again:
+                power_up_sound.play()
                 self.start_ticks = pygame.time.get_ticks()
                 god_status_again = 0
             self.elapsed_time = (pygame.time.get_ticks() - self.start_ticks) // 1000  # Время в секундах
@@ -257,6 +255,9 @@ class Shield(pygame.sprite.Sprite):
         self.rect.center = list(player_group)[0].rect.center
         if pygame.sprite.spritecollideany(self, bullet_group_enemy):
             shield_status = 0
+            for bullet_enemy in bullet_group_enemy:
+                if pygame.sprite.collide_rect(bullet_enemy, list(player_group)[1]):
+                    bullet_enemy.kill()
             self.kill()
 
 
@@ -270,6 +271,7 @@ class Bullet(pygame.sprite.Sprite):  # Пуля игрока
         self.rect.x = (list(player_group)[0].rect.x
                        + list(player_group)[0].rect.w // 2 - list(bullet_group)[0].rect.w // 2)
         self.rect.y = list(player_group)[0].rect.y - self.rect.h
+        bullet_sound_player.play()  # Воспроизведение звука пули
 
     def update(self):
         global bullet_status
@@ -289,6 +291,8 @@ class Enemy_Bullet(pygame.sprite.Sprite):  # Пуля врага
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.voice = pygame.mixer.Channel(2)
+        self.voice.play(bullet_sound_player)
 
     def update(self):
         global bullet_status
@@ -337,7 +341,6 @@ class Enemy(pygame.sprite.Sprite):  # Враг (шаблон)
         if self.if_num_bullet == frame_shot:
             self.if_num_bullet = 0
             if random.randint(1, 100) <= chance_shot_enemy and self.is_path_clear():
-                bullet_sound_player.play()  # Воспроизведение звука пули
                 Enemy_Bullet(self.rect.x + self.rect.w // 2 - 5 // 2, self.rect.y + self.rect.h)
         if self.if_num == 5:
             self.if_num = 0
@@ -491,7 +494,7 @@ difficulty = menu.run()
 
 Player()
 if level == 1:  # Первый уровень
-    pygame.mixer.music.load('sound/level_1_sound.mp3')  # Музыка для первого уровня
+    pygame.mixer.music.load('data/level_1_sound.mp3')  # Музыка для первого уровня
     pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
         Enemy_Green(i, 40)

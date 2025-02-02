@@ -52,16 +52,8 @@ def load_image(name, colorkey=None):  # Функция загрузки изоб
     image = pygame.image.load(fullname)
     return image
 
+# space_background_game
 
-def show_end_screen(final_score):  # Окно по завершению уровня
-    screen.fill((0, 0, 0))
-    font = pygame.font.Font(None, 74)
-    text = font.render("Уровень завершен!", True, (255, 255, 255))
-    score_text = font.render(f"Ваши очки: {final_score}", True, (255, 255, 255))
-    screen.blit(text, (width // 2 - text.get_width() // 2, height // 4))
-    screen.blit(score_text, (width // 2 - score_text.get_width() // 2, height // 2))
-    pygame.display.flip()
-    pygame.time.wait(3000)
 
 
 def draw_score_and_timer():  # Отображение очков и таймера
@@ -167,6 +159,41 @@ class Menu:  # Меню
             start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect = self.draw()
             pygame.display.flip()
             clock.tick(fps)
+
+
+def show_end_screen(final_score):  # Окно по завершению уровня
+    global level  # Добавляем уровень в глобальные переменные
+    screen.fill((0, 0, 0))  # Заполняем экран черным цветом (или можно использовать фон)
+
+    font = pygame.font.Font(None, 74)
+    text = font.render("Уровень завершен!", True, (255, 255, 255))
+    score_text = font.render(f"Ваши очки: {final_score}", True, (255, 255, 255))
+    continue_button = font.render("Продолжить", True, (255, 255, 255))
+
+    screen.blit(text, (width // 2 - text.get_width() // 2, height // 4))
+    screen.blit(score_text, (width // 2 - score_text.get_width() // 2, height // 2))
+
+    # Изменяем позицию кнопки "Продолжить"
+    continue_button_rect = continue_button.get_rect(center=(width // 2, height // 2 + 100))
+    screen.blit(continue_button, continue_button_rect)
+
+    pygame.display.flip()  # Обновляем экран
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if continue_button_rect.collidepoint(mouse_pos):
+                    print("Кнопка 'Продолжить' нажата")  # Отладочное сообщение
+                    level += 1  # Увеличиваем уровень
+                    waiting = False  # Выходим из цикла ожидания
+                    initialize_next_level()  # Вызов функции для инициализации следующего уровня
+                    return  # Возвращаемся, чтобы выйти из функции и очистить экран
+        pygame.time.wait(100)  # Небольшая задержка для предотвращения избыточной загрузки процессора
 
 
 class Player(pygame.sprite.Sprite):  # Игрок
@@ -504,13 +531,22 @@ if level == 1:  # Первый уровень
         Enemy_Green(i, -95)
     for i in range(40, width - 50, 52):
         Enemy_Yellow(i, -150)
+
     # for i in range(22, width - 50, 56):
     #     Enemy_Red(i, -140)
     # for i in range(40, width - 50, 52):
     #     Enemy_Yellow(i, -70)
 
-if level == 2:  # Первый уровень
-    pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для первого уровня
+
+def initialize_next_level():
+    global enemy_group, score, start_ticks  # Обнуляем группу врагов и счет
+    enemy_group.empty()  # Очищаем группу врагов
+    score = 0  # Обнуляем счет
+    start_ticks = pygame.time.get_ticks()  # Сбрасываем таймер
+
+
+if level == 2:  # второй уровень
+    pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
     pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
         Enemy_Green(i, 40)
@@ -551,8 +587,22 @@ while running:
         remaining_time = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
         multiplier = 1 + (remaining_time / 60) * 0.6
         final_score = int(score * multiplier)
-        show_end_screen(final_score)  # Показываем экран завершения
-        running = False
+        show_end_screen(final_score)
+        if level == 2:  # второй уровень
+            pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
+            pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
+            for i in range(57, width - 50, 50):
+                Enemy_Green(i, 40)
+            for i in range(57, width - 50, 50):
+                Enemy_Green(i, -40)
+            for i in range(57, width - 50, 50):
+                Enemy_Yellow(i, -95)
+            for i in range(40, width - 50, 52):
+                Enemy_Yellow(i, -150)
+            for i in range(22, width - 50, 56):
+                Enemy_Red(i, -230)
+        # Показываем экран завершения
+        # running = False
 
     final_score = int(score)
     pygame.display.flip()

@@ -2,6 +2,13 @@ import os
 import sys
 import random
 import pygame
+import sqlite3
+
+from sympy.codegen.ast import continue_
+
+con = sqlite3.connect("data/si_db.sql")
+
+cur = con.cursor()
 
 pygame.init()
 pygame.mixer.init()
@@ -15,6 +22,7 @@ clock = pygame.time.Clock()
 bullet_status = 0  # 1 - пуля игрока существует и летит, 0 - пули игрока нет
 enemy_direction = 1  # Направление передвижения врага (1 - вправо, -1 - влево)
 enemy_speed = 0.50  # Скорость передвижения врага
+start_enemy_speed = 0.50  # Скорость передвижения врага согласно сложности игры
 max_enemy_speed = 1  # Максимальная скорость передвижения врага
 max_give_enemy_speed = 0.02  # Максимальное значение которое выдается к скорости передвижения врага
 score = 0  # Очки
@@ -28,7 +36,7 @@ shield_status = 0  # Определяет, есть ли у игрока щит
 god_status = 0  # Определяет, есть ли у игрока неуязвимость
 god_status_again = 1  # Определяет, есть ли у игрока повторная неуязвимость
 frame_shot = 30  # Сколько кадров должно пройти, чтобы была произведена попытка выстрела
-level = 1  # Уровень по-умолчанию
+level = cur.execute("""SELECT level FROM settings""").fetchall()[0][0]  # Уровень по-умолчанию
 god_status_one_time = 0
 power_up_sound = pygame.mixer.Sound('data/pu_sound_1.mp3')
 bullet_sound_player = pygame.mixer.Sound('data/shot_sound_2.mp3')
@@ -52,8 +60,8 @@ def load_image(name, colorkey=None):  # Функция загрузки изоб
     image = pygame.image.load(fullname)
     return image
 
-# space_background_game
 
+# space_background_game
 
 
 def draw_score_and_timer():  # Отображение очков и таймера
@@ -81,56 +89,97 @@ class Menu:  # Меню
         self.font = pygame.font.Font(None, 74)  # Шрифт
         self.font_small = pygame.font.Font(None, 36)  # Шрифт маленький
         self.difficulties = ["easy", "medium", "hard"]  # Список сложностей игры
-        self.current_difficulty_index = 0  # Сложность игры
+        self.current_difficulty_index = cur.execute("""SELECT difficulty FROM settings""").fetchall()[0][
+            0]  # Сложность игры
+        self.sound_volume = cur.execute("""SELECT volume FROM settings""").fetchall()[0][0]  # Громкость звука
 
     def draw(self):
-        global enemy_speed_bullet, enemy_speed, chance_shot_enemy, max_give_enemy_speed, max_enemy_speed
+        global enemy_speed_bullet, enemy_speed, chance_shot_enemy, max_give_enemy_speed, max_enemy_speed, sound_volume, start_enemy_speed
         screen.fill((0, 0, 0))
         background = pygame.transform.scale(load_image("space_background.jpg"), (800, 400))  # Фон
         screen.blit(background, (-100, 0))
         title = self.font.render("Space Invaders", True, (255, 255, 255))
         start_button = self.font_small.render("Начать", True, (255, 255, 255))
+        continue_button = self.font_small.render("Продолжить", True, (255, 255, 255))
         exit_button = self.font_small.render("Выход", True, (255, 255, 255))
-        difficulty_text = self.font_small.render(f"Сложность: {self.difficulties[self.current_difficulty_index]}", True,
+        score_text = self.font_small.render(
+            f"Всего очков: {cur.execute('SELECT score_all FROM settings').fetchall()[0][0]}", True, (255, 255, 255))
+        difficulty_text = self.font_small.render(f"Сложность: {self.difficulties[self.current_difficulty_index]}",
+                                                 True,
                                                  (255, 255, 255))
+        sound_on_button = load_image("sound-on.png")
+        sound_off_button = load_image("sound-off.png")
+        if self.sound_volume:
+            sound_button = pygame.transform.scale(sound_on_button, (30, 30))
+        else:
+            sound_button = pygame.transform.scale(sound_off_button, (30, 30))
+        screen.blit(sound_button, (width - 40, height - 40))
+        sound_button_rect = sound_button.get_rect(x=width - 40, y=height - 40)
         if self.difficulties[self.current_difficulty_index] == 'medium':
             enemy_speed_bullet = 200
             chance_shot_enemy = 50
             enemy_speed = 0.80
+            start_enemy_speed = 0.80
             max_give_enemy_speed = 0.04
             max_enemy_speed = 1.3
         elif self.difficulties[self.current_difficulty_index] == 'hard':
             enemy_speed_bullet = 250
             chance_shot_enemy = 70
             enemy_speed = 1.10
+            start_enemy_speed = 1.10
             max_give_enemy_speed = 0.06
             max_enemy_speed = 1.6
         else:
             enemy_speed_bullet = 150
             chance_shot_enemy = 30
             enemy_speed = 0.50
+            start_enemy_speed = 0.50
             max_give_enemy_speed = 0.02
             max_enemy_speed = 1
-
-        start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
-        exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))
+        if self.sound_volume:
+            explosion_sound.set_volume(1.0)
+            bullet_sound_player.set_volume(1.0)
+            power_up_sound.set_volume(1.0)
+            pygame.mixer.music.set_volume(0.5)
+        else:
+            explosion_sound.set_volume(0.0)
+            bullet_sound_player.set_volume(0.0)
+            power_up_sound.set_volume(0.0)
+            pygame.mixer.music.set_volume(0.0)
+        cur.execute(f"""UPDATE settings SET difficulty = {self.current_difficulty_index}""")
+        cur.execute(f"""UPDATE settings SET volume = {self.sound_volume}""")
+        con.commit()
+        if level != 1 or level == 4:
+            continue_button_rect = continue_button.get_rect(center=(width // 2, height // 2))
+            start_button_rect = start_button.get_rect(center=(width // 2, height // 2 + 50))
+            exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 100))
+            difficulty_text_rect = difficulty_text.get_rect(x=width // 2 - difficulty_text.get_width() // 2,
+                                                            y=height // 2 + 150)
+        else:
+            continue_button_rect = continue_button.get_rect(center=(-100, -100))
+            start_button_rect = start_button.get_rect(center=(width // 2, height // 2))
+            exit_button_rect = exit_button.get_rect(center=(width // 2, height // 2 + 50))
+            difficulty_text_rect = difficulty_text.get_rect(x=width // 2 - difficulty_text.get_width() // 2,
+                                                            y=height // 2 + 100)
 
         screen.blit(title, (width // 2 - title.get_width() // 2, height // 4))
+        screen.blit(score_text, (width // 2 - score_text.get_width() // 2, height // 9))
         screen.blit(start_button, start_button_rect)
+        screen.blit(continue_button, continue_button_rect)
         screen.blit(exit_button, exit_button_rect)
-        screen.blit(difficulty_text, (width // 2 - difficulty_text.get_width() // 2, height // 2 + 100))
+        screen.blit(difficulty_text, difficulty_text_rect)
 
         left_arrow = self.font_small.render("<", True, (255, 255, 255))
         right_arrow = self.font_small.render(">", True, (255, 255, 255))
-        left_arrow_rect = left_arrow.get_rect(x=150, y=height // 2 + 100)
-        right_arrow_rect = right_arrow.get_rect(x=430, y=height // 2 + 100)
+        left_arrow_rect = left_arrow.get_rect(x=150, y=difficulty_text_rect.y)
+        right_arrow_rect = right_arrow.get_rect(x=430, y=difficulty_text_rect.y)
         screen.blit(left_arrow, left_arrow_rect)
         screen.blit(right_arrow, right_arrow_rect)
 
-        return start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect
+        return start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect, sound_button_rect, continue_button_rect
 
     def run(self):
-        global running
+        global running, level
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -138,6 +187,12 @@ class Menu:  # Меню
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
                     if start_button_rect.collidepoint(mouse_pos):
+                        level = 1
+                        cur.execute("""UPDATE settings SET score_all = 0""")
+                        cur.execute(f"""UPDATE settings SET level = {level}""")
+                        con.commit()
+                        return self.difficulties[self.current_difficulty_index]  # Начать игру с выбранной сложностью
+                    if continue_button_rect.collidepoint(mouse_pos):
                         return self.difficulties[self.current_difficulty_index]  # Начать игру с выбранной сложностью
                     if exit_button_rect.collidepoint(mouse_pos):
                         running = False
@@ -145,6 +200,11 @@ class Menu:  # Меню
                         self.current_difficulty_index = (self.current_difficulty_index - 1) % len(self.difficulties)
                     if right_arrow_rect.collidepoint(mouse_pos):
                         self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
+                    if sound_button_rect.collidepoint(mouse_pos):
+                        if not self.sound_volume:
+                            self.sound_volume = 1
+                        else:
+                            self.sound_volume = 0
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
@@ -156,7 +216,7 @@ class Menu:  # Меню
                     elif event.key == pygame.K_RIGHT:
                         self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
 
-            start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect = self.draw()
+            start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect, sound_button_rect, continue_button_rect = self.draw()
             pygame.display.flip()
             clock.tick(fps)
 
@@ -178,7 +238,9 @@ def show_end_screen(final_score):  # Окно по завершению уров
     screen.blit(continue_button, continue_button_rect)
 
     pygame.display.flip()  # Обновляем экран
-
+    level += 1  # Увеличиваем уровень
+    cur.execute(f"""UPDATE settings SET level = {level}""")
+    con.commit()
     waiting = True
     while waiting:
         for event in pygame.event.get():
@@ -189,11 +251,9 @@ def show_end_screen(final_score):  # Окно по завершению уров
                 mouse_pos = pygame.mouse.get_pos()
                 if continue_button_rect.collidepoint(mouse_pos):
                     print("Кнопка 'Продолжить' нажата")  # Отладочное сообщение
-                    level += 1  # Увеличиваем уровень
                     waiting = False  # Выходим из цикла ожидания
                     initialize_next_level()  # Вызов функции для инициализации следующего уровня
                     return  # Возвращаемся, чтобы выйти из функции и очистить экран
-        pygame.time.wait(100)  # Небольшая задержка для предотвращения избыточной загрузки процессора
 
 
 class Player(pygame.sprite.Sprite):  # Игрок
@@ -389,6 +449,8 @@ class Enemy(pygame.sprite.Sprite):  # Враг (шаблон)
                     break
             if enemy_speed < max_enemy_speed:
                 enemy_speed += max_give_enemy_speed
+        if pygame.sprite.spritecollideany(self, player_group):
+            list(player_group)[0].kill()
 
 
 class Enemy_Red(Enemy):  # Враг Большой
@@ -539,9 +601,10 @@ if level == 1:  # Первый уровень
 
 
 def initialize_next_level():
-    global enemy_group, score, start_ticks  # Обнуляем группу врагов и счет
+    global enemy_group, score, start_ticks, enemy_speed  # Обнуляем группу врагов и счет
     enemy_group.empty()  # Очищаем группу врагов
     score = 0  # Обнуляем счет
+    enemy_speed = start_enemy_speed
     start_ticks = pygame.time.get_ticks()  # Сбрасываем таймер
 
 
@@ -587,6 +650,9 @@ while running:
         remaining_time = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
         multiplier = 1 + (remaining_time / 60) * 0.6
         final_score = int(score * multiplier)
+        all_score = cur.execute(f"""SELECT score_all FROM settings""").fetchall()[0][0]
+        cur.execute(f"""UPDATE settings SET score_all = {all_score + final_score}""")
+        con.commit()
         show_end_screen(final_score)
         if level == 2:  # второй уровень
             pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня

@@ -90,15 +90,24 @@ class Menu:  # Меню
         self.font_small = pygame.font.Font(None, 36)  # Шрифт маленький
         self.difficulties = ["easy", "medium", "hard"]  # Список сложностей игры
         self.current_difficulty_index = 0  # Сложность игры
+        self.sound_volume = 1  # Громкость звука
 
     def draw(self):
-        global enemy_speed_bullet, enemy_speed, chance_shot_enemy, max_give_enemy_speed, max_enemy_speed
+        global enemy_speed_bullet, enemy_speed, chance_shot_enemy, max_give_enemy_speed, max_enemy_speed, sound_volume
         screen.fill((0, 0, 0))
         background = pygame.transform.scale(load_image("space_background.jpg"), (800, 400))  # Фон
         screen.blit(background, (-100, 0))
         title = self.font.render("Space Invaders", True, (255, 255, 255))
         start_button = self.font_small.render("Начать", True, (255, 255, 255))
         exit_button = self.font_small.render("Выход", True, (255, 255, 255))
+        sound_on_button = load_image("sound-on.png")
+        sound_off_button = load_image("sound-off.png")
+        if self.sound_volume:
+            sound_button = pygame.transform.scale(sound_on_button, (30, 30))
+        else:
+            sound_button = pygame.transform.scale(sound_off_button, (30, 30))
+        screen.blit(sound_button, (width - 40, height - 40))
+        sound_button_rect = sound_button.get_rect(x=width - 40, y=height - 40)
         difficulty_text = self.font_small.render(f"Сложность: {self.difficulties[self.current_difficulty_index]}", True,
                                                  (255, 255, 255))
         if self.difficulties[self.current_difficulty_index] == 'medium':
@@ -135,7 +144,7 @@ class Menu:  # Меню
         screen.blit(left_arrow, left_arrow_rect)
         screen.blit(right_arrow, right_arrow_rect)
 
-        return start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect
+        return start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect, sound_button_rect
 
     def run(self):
         global running
@@ -153,6 +162,19 @@ class Menu:  # Меню
                         self.current_difficulty_index = (self.current_difficulty_index - 1) % len(self.difficulties)
                     if right_arrow_rect.collidepoint(mouse_pos):
                         self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
+                    if sound_button_rect.collidepoint(mouse_pos):
+                        if not self.sound_volume:
+                            explosion_sound.set_volume(1.0)
+                            bullet_sound_player.set_volume(1.0)
+                            power_up_sound.set_volume(1.0)
+                            pygame.mixer.music.set_volume(1.0)
+                            self.sound_volume = 1
+                        else:
+                            explosion_sound.set_volume(0.0)
+                            bullet_sound_player.set_volume(0.0)
+                            power_up_sound.set_volume(0.0)
+                            pygame.mixer.music.set_volume(0.0)
+                            self.sound_volume = 0
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
@@ -164,7 +186,7 @@ class Menu:  # Меню
                     elif event.key == pygame.K_RIGHT:
                         self.current_difficulty_index = (self.current_difficulty_index + 1) % len(self.difficulties)
 
-            start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect = self.draw()
+            start_button_rect, exit_button_rect, left_arrow_rect, right_arrow_rect, sound_button_rect = self.draw()
             pygame.display.flip()
             clock.tick(fps)
 

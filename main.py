@@ -309,42 +309,11 @@ def show_death_screen():  # Окно после смерти игрока
                     initialize_next_level()  # Вызов функции для инициализации следующего уровня
                     Player()
                     if level == 1:  # Первый уровень
-                        pygame.mixer.music.load('data/level_1_sound.mp3')  # Музыка для первого уровня
-                        pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, 40)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, -40)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, -95)
-                        for i in range(40, width - 50, 52):
-                            Enemy_Yellow(i, -150)
+                        level_one()
                     elif level == 2:  # второй уровень
-                        pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
-                        pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, 40)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, -40)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Yellow(i, -95)
-                        for i in range(40, width - 50, 52):
-                            Enemy_Yellow(i, -150)
-                        for i in range(22, width - 50, 56):
-                            Enemy_Red(i, -230)
+                        level_two()
                     elif level == 3:  # второй уровень
-                        pygame.mixer.music.load('data/level_3_sound.mp3')  # Музыка для второго уровня
-                        pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-                        for i in range(57, width - 50, 50):
-                            Enemy_Green(i, 30)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Yellow(i, -50)
-                        for i in range(57, width - 50, 50):
-                            Enemy_Yellow(i, -130)
-                        for i in range(22, width - 50, 56):
-                            Enemy_Red(i, -200)
-                        for i in range(22, width - 50, 56):
-                            Enemy_Red(i, -270)
+                        level_three()
                     return  # Возвращаемся, чтобы выйти из функции и очистить экран
                 if main_menu_button_rect.collidepoint(mouse_pos):
                     initialize_next_level()
@@ -696,7 +665,7 @@ def initialize_next_level():
 Menu().run()
 Player()
 
-if level == 1:  # Первый уровень
+def level_one():
     pygame.mixer.music.load('data/level_1_sound.mp3')  # Музыка для первого уровня
     pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
@@ -707,7 +676,8 @@ if level == 1:  # Первый уровень
         Enemy_Green(i, -95)
     for i in range(40, width - 50, 52):
         Enemy_Yellow(i, -150)
-elif level == 2:  # второй уровень
+
+def level_two():
     pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
     pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
@@ -720,7 +690,8 @@ elif level == 2:  # второй уровень
         Enemy_Yellow(i, -150)
     for i in range(22, width - 50, 56):
         Enemy_Red(i, -230)
-elif level == 3:  # второй уровень
+
+def level_three():
     pygame.mixer.music.load('data/level_3_sound.mp3')  # Музыка для второго уровня
     pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
     for i in range(57, width - 50, 50):
@@ -733,6 +704,13 @@ elif level == 3:  # второй уровень
         Enemy_Red(i, -200)
     for i in range(22, width - 50, 56):
         Enemy_Red(i, -270)
+
+if level == 1:  # Первый уровень
+    level_one()
+elif level == 2:  # второй уровень
+    level_two()
+elif level == 3:  # второй уровень
+    level_three()
 
 while running:
     for event in pygame.event.get():
@@ -768,40 +746,11 @@ while running:
         else:
             Player()
         if level == 1:  # Первый уровень
-            pygame.mixer.music.load('data/level_1_sound.mp3')  # Музыка для первого уровня
-            pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, 40)
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, -40)
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, -95)
-            for i in range(40, width - 50, 52):
-                Enemy_Yellow(i, -150)
+            level_one()
         elif level == 2:  # второй уровень
-            pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
-            pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, 30)
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, -50)
-            for i in range(57, width - 50, 50):
-                Enemy_Yellow(i, -130)
-            for i in range(22, width - 50, 56):
-                Enemy_Red(i, -200)
+            level_two()
         elif level == 3:  # второй уровень
-            pygame.mixer.music.load('data/level_3_sound.mp3')  # Музыка для второго уровня
-            pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
-            for i in range(57, width - 50, 50):
-                Enemy_Green(i, 30)
-            for i in range(57, width - 50, 50):
-                Enemy_Yellow(i, -50)
-            for i in range(57, width - 50, 50):
-                Enemy_Yellow(i, -130)
-            for i in range(22, width - 50, 56):
-                Enemy_Red(i, -200)
-            for i in range(22, width - 50, 56):
-                Enemy_Red(i, -270)
+            level_three()
         # Показываем экран завершения
         # running = False
 

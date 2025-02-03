@@ -658,15 +658,26 @@ while running:
             pygame.mixer.music.load('data/level_2_sound.mp3')  # Музыка для второго уровня
             pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
             for i in range(57, width - 50, 50):
-                Enemy_Green(i, 40)
+                Enemy_Green(i, 30)
             for i in range(57, width - 50, 50):
-                Enemy_Green(i, -40)
+                Enemy_Green(i, -50)
             for i in range(57, width - 50, 50):
-                Enemy_Yellow(i, -95)
-            for i in range(40, width - 50, 52):
-                Enemy_Yellow(i, -150)
+                Enemy_Yellow(i, -130)
             for i in range(22, width - 50, 56):
-                Enemy_Red(i, -230)
+                Enemy_Red(i, -200)
+        if level == 3:  # второй уровень
+            pygame.mixer.music.load('data/level_3_sound.mp3')  # Музыка для второго уровня
+            pygame.mixer.music.play(-1)  # Воспроизведение музыки в цикле
+            for i in range(57, width - 50, 50):
+                Enemy_Green(i, 30)
+            for i in range(57, width - 50, 50):
+                Enemy_Yellow(i, -50)
+            for i in range(57, width - 50, 50):
+                Enemy_Yellow(i, -130)
+            for i in range(22, width - 50, 56):
+                Enemy_Red(i, -200)
+            for i in range(22, width - 50, 56):
+                Enemy_Red(i, -270)
         # Показываем экран завершения
         # running = False
 
